@@ -1,5 +1,4 @@
 package frc.robot.subsystems;
-import java.time.Period;
 
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.CANSparkMax.IdleMode;

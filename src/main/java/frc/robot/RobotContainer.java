@@ -85,7 +85,7 @@ public class RobotContainer {
 
   public void teleopDrive() {
     m_drive.setDefaultCommand(new RunCommand(
-      () -> m_drive.updateSpeed(m_controller.getRawAxis(0), m_controller.getRawAxis(1), m_controller.getRawAxis(2))
+      () -> m_drive.updateSpeed(m_controller.getRawAxis(0), m_controller.getRawAxis(1), m_controller.getRawAxis(2), true)
     ));
   }
 
@@ -98,4 +98,5 @@ public class RobotContainer {
     // An ExampleCommand will run in autonomous
     return null;
   }
+
 }

@@ -3,14 +3,18 @@ package frc.robot.subsystems;
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.CANSparkMaxLowLevel.MotorType;
 
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
-import edu.wpi.first.wpilibj2.command.MecanumControllerCommand;
+import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.math.kinematics.ChassisSpeeds;
+import edu.wpi.first.math.kinematics.MecanumDriveKinematics;
+import edu.wpi.first.math.kinematics.MecanumDriveWheelSpeeds;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants; 
 
 public class DriveSubsystem extends SubsystemBase {
     private boolean inverted;
     private CANSparkMax[] motors;
+
+    public final MecanumDriveKinematics kinematics;
 
     public  DriveSubsystem() {
         this.motors = new CANSparkMax[4];
@@ -25,65 +29,39 @@ public class DriveSubsystem extends SubsystemBase {
         this.motors[3].setInverted(false);
         inverted = false;
 
-        SmartDashboard.putNumber("driveCurrentLimit", Constants.DRIVE_CURRENT_LIMIT);
+        motors[0].setSmartCurrentLimit(Constants.DRIVE_CURRENT_LIMIT);
+        motors[1].setSmartCurrentLimit(Constants.DRIVE_CURRENT_LIMIT);
+        motors[2].setSmartCurrentLimit(Constants.DRIVE_CURRENT_LIMIT);
+        motors[3].setSmartCurrentLimit(Constants.DRIVE_CURRENT_LIMIT);
+
+        // meter per second
+        kinematics = new MecanumDriveKinematics(
+            new Translation2d(0.28575, 0.2267), 
+            new Translation2d(0.28575, -0.2267),
+            new Translation2d(-0.28575, 0.2267), 
+            new Translation2d(-0.28575, -0.2267));
     }
 
     public void invertDrive() {
         inverted = !inverted;
     }
 
-    public void updateSpeed(double strafe, double drive, double turn) {
-        updateSpeedInternal(strafe, drive, turn, true);
-    }
-
-    public void updateAutoSpeed(double strafe, double drive, double turn) {
-        updateSpeedInternal(strafe, drive, turn, false);
-    }
-
-    private void updateSpeedInternal(double strafe, double drive, double turn, boolean useInverted) {
-        int limit = (int) Math.round(SmartDashboard.getNumber("driveCurrentLimit", Constants.DRIVE_CURRENT_LIMIT));
-        motors[0].setSmartCurrentLimit(limit);
-        motors[1].setSmartCurrentLimit(limit);
-        motors[2].setSmartCurrentLimit(limit);
-        motors[3].setSmartCurrentLimit(limit);
-
-        double[] speeds = new double[4];
+    public void updateSpeed(double strafe, double drive, double turn, boolean useInverted) {
+        double xSpeed = strafe * Constants.MOVEMENT_SPEED;
+        double ySpeed = drive * Constants.MOVEMENT_SPEED;
         if (useInverted && inverted) {
-            speeds[0] = 0 + strafe - drive + turn;
-            speeds[1] = 0 - strafe - drive - turn;
-            speeds[2] = 0 - strafe - drive + turn;
-            speeds[3] = 0 + strafe - drive - turn;
-        } else {
-            speeds[0] = 0 - strafe + drive + turn;
-            speeds[1] = 0 + strafe + drive - turn;
-            speeds[2] = 0 + strafe + drive + turn;
-            speeds[3] = 0 - strafe + drive - turn;
+            xSpeed = -xSpeed;
+            ySpeed = -ySpeed;
         }
-        for (int i = 0; i < 4; ++i) {
-            speeds[i] *= Constants.DRIVE_SPEED_MULT;
-        }
-        speeds = normalize(speeds);
-        for (int i = 0; i < 4; ++i) {
-            this.motors[i].set(speeds[i]);
-        }
-    }
 
-    // Checks if any speed is greater than 1 and if so reduces all speeds
-    private double[] normalize(final double[] vector) {
-        double max = 0.0;
-        for (int i = 0; i < vector.length; ++i) {
-            max = Math.max(max, Math.abs(vector[i]));
-        }
-        if (max <= 1) {
-            return vector;
-        }
-        double[] normalized = new double[vector.length];
-        for (int i = 0; i < vector.length; ++i) {
-            normalized[i] = vector[i] / max;
-        }
-        return normalized;
-    }
+        ChassisSpeeds chassisSpeeds = new ChassisSpeeds(xSpeed, ySpeed, turn * Constants.TURN_SPEED);
+        MecanumDriveWheelSpeeds wheelSpeeds = kinematics.toWheelSpeeds(chassisSpeeds); 
 
+        this.motors[0].set(wheelSpeeds.frontLeftMetersPerSecond * Constants.DRIVE_SPEED_MULT / Constants.MOVEMENT_SPEED);
+        this.motors[1].set(wheelSpeeds.frontRightMetersPerSecond * Constants.DRIVE_SPEED_MULT / Constants.MOVEMENT_SPEED);
+        this.motors[2].set(wheelSpeeds.rearLeftMetersPerSecond * Constants.DRIVE_SPEED_MULT / Constants.MOVEMENT_SPEED);
+        this.motors[3].set(wheelSpeeds.rearRightMetersPerSecond * Constants.DRIVE_SPEED_MULT / Constants.MOVEMENT_SPEED);
+    }
     @Override
     public void periodic() {
         

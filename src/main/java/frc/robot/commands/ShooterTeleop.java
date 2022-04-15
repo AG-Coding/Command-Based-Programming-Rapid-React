@@ -2,7 +2,6 @@ package frc.robot.commands;
 
 import edu.wpi.first.wpilibj2.command.CommandBase;
 import edu.wpi.first.wpilibj2.command.WaitCommand;
-import frc.robot.Constants;
 import frc.robot.subsystems.DriveSubsystem;
 import frc.robot.subsystems.IndexerSubsystem;
 import frc.robot.subsystems.ShooterSubsystem;
@@ -30,10 +29,10 @@ public class ShooterTeleop extends CommandBase {
 
     @Override
     public void execute() {
-        m_drive.updateAutoSpeed(0, 0, m_vision.steeringAssist());
+        m_drive.updateSpeed(0, 0, m_vision.steeringAssist(), false);
         m_shooter.shoot(m_shooter.getClampedRPM());
         new WaitCommand(1);
-        m_drive.updateAutoSpeed(0, 0, 0);
+        m_drive.updateSpeed(0, 0, 0, false);
         m_indexer.extend();
         new WaitCommand(1);
     }
